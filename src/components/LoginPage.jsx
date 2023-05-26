@@ -8,8 +8,8 @@ const LoginPage = ({history}) => {
     const [loading, setLoading] = useState(false);
     const auth=getAuth(app);
     const [form, setForm] = useState({
-        email:'hong@inha.com',
-        password:'12345678'
+        email:'hsae97@naver.com',
+        password:'gksto97!!'
     });
     const {email, password} = form;
     const onChange = (e) => {
@@ -25,7 +25,12 @@ const LoginPage = ({history}) => {
             sessionStorage.setItem('email', email);
             sessionStorage.setItem('uid', success.user.uid);
             setLoading(false);
-            history.push('/');
+
+            if(sessionStorage.getItem('target')){
+                history.push(sessionStorage.getItem('target'))
+            }else{
+                history.push('/');
+            }
         })
         .catch(error=>{
             alert('에러:' + error.message);

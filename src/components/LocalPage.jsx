@@ -4,8 +4,13 @@ import { useState } from 'react';
 import { useEffect } from 'react';
 import { Row, Col, Table, Form, Button } from 'react-bootstrap'
 import MapPage from './MapPage';
+import { app } from '../firebaseInit'
+import moment from 'moment';
+import { getDatabase, ref, set, onValue} from 'firebase/database'
 
-const LocalPage = () => {
+const LocalPage = ({history}) => {
+    const db = getDatabase(app);
+    const uid = sessionStorage.getItem('uid');
     const [locals, setLocals] = useState([]);
     const [query, setQuery] = useState('인하대학교');
     const [total, setTotal] = useState(0);
@@ -33,7 +38,20 @@ const LocalPage = () => {
         e.preventDefault();
         getLocal();
     }
-
+    //즐겨찾기 버튼 클릭했을 때
+    const onFavorite = (local) => {
+        if(uid){
+            if(window.confirm(local.place_name + '를(을) 즐겨찾기에 등록하시겠습니까?')){
+                //즐겨찾기 등록
+                const date=moment(new Date()).format('YYYY-MM-DD HH:mm:ss');
+                set(ref(db, `favorite/${uid}/${local.id}`), {...local, date:date}); //yarn add moment 설치해야 함
+                    alert('등록이 완료되었습니다.')
+            }
+        }else{
+            sessionStorage.setItem('target','/local');
+            history.push('/login');
+        }
+    }
     return (
         <Row>
             <Row>
@@ -58,6 +76,7 @@ const LocalPage = () => {
                                 <td>주소</td>
                                 <td>전화</td>
                                 <td>위치</td>
+                                <td>즐겨찾기</td>
                             </tr>
                         </thead>
                         <tbody>
@@ -67,6 +86,8 @@ const LocalPage = () => {
                                     <td>{local.phone}</td>
                                     <td>{local.address_name}</td>
                                     <td><MapPage local={local}/></td>
+                                    <td><Button className='btn-sm'
+                                    onClick={()=>onFavorite(local)}>즐겨찾기</Button></td>
                                 </tr>
                             )}
                         </tbody>

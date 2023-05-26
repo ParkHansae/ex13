@@ -3,18 +3,20 @@ import { useState } from 'react'
 import {Col, Row, Card, Form, InputGroup, Button} from 'react-bootstrap'
 import { app } from '../firebaseInit'
 import { getFirestore, doc, getDoc, setDoc} from 'firebase/firestore'
+import { getStorage, uploadBytes, ref, getDownloadURL } from 'firebase/storage' //파일업로드
 
-const MyPage = () => {
+const MyPage = ({history}) => {
     const [loading, setLoading] = useState(false);
     const uid=sessionStorage.getItem("uid");
     const db = getFirestore(app);
+    const storage = getStorage(app);
     const [image, setImage] = useState('https://via.placeholder.com/200x200');
     const [file, setFile] = useState(null);
 
     const [form, setForm] = useState({
         name:'무기명',
         phone: '010-1010-1010',
-        address: '인천 서구 경서동',
+        address: '인천 동구 화수동',
         photo:''
     });
 
@@ -34,19 +36,34 @@ const MyPage = () => {
         const user= await getDoc(doc(db, 'user', uid));
         console.log(user.data());
         setForm(user.data());
+        setImage(user.data().photo ? 
+            user.data().photo:'https://via.placeholder.com/200x200')
         setLoading(false);
     }
 
-    const onUpdate = () => {
-        if(!window.confirm('수정된 내용을 저장하실래요?')) return;
-        setDoc(doc(db, 'user', uid), form);
+    const onUpdate = async() => {
+        if(!window.confirm('수정된 내용을 저장하시겠습니까?')) return;
+        //파일업로드
+        setLoading(true)
+        if(file){
+            const snapshot = await uploadBytes(
+                ref(storage,`/photo/${Date.now()}.jpg`), file);
+            const url = await getDownloadURL(snapshot.ref);
+            await setDoc(doc(db, 'user', uid), {...form, photo:url});
+        }
+        else{
+            await setDoc(doc(db, 'user', uid), form);
+        }
+        
+        setLoading(false)
+        history.push('/')
     }
 
     useEffect(()=>{
         getUser();
     }, []);
 
-    if(loading) return <h1 className='text-center my-5'>로딩중......</h1>
+    if(loading) return <h1 className='text-center my-5'>로딩중</h1>
     return (
         <Row className='my-5'>
             <Col>
